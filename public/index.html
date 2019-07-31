@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>Weather Information</title>
+
+  <link rel="stylesheet" href="bootswatch/dist/flatly/bootstrap.min.css">
+
+  <script src="rhea/dist/rhea.min.js"></script>
+  <style>
+main > .container {
+  padding: 60px 15px 0;
+}
+  </style>
+</head>
+
+<body class="d-flex flex-column h-100">
+
+<script>
+var request = new XMLHttpRequest;
+request.open("GET", "/con.info", true);
+request.onload = function () {
+	if (request.status >= 200 && request.status < 400 ) {
+		connect(JSON.parse(request.responseText));
+	}
+};
+request.onerror = function () {
+	alert("Failed to open connection");
+};
+request.send();
+
+function connect(ci) {
+	var client = require("rhea");
+	client.options.username = ci.username
+	client.options.password = ci.password
+	client.on("message", function (context) {
+		append(JSON.parse(context.message.body.content.toString()));
+	});
+	var ws = client.websocket_connect(WebSocket);
+	var connection = client.connect({"connection_details":ws(ci.uri, ci.options), "reconnect":true, "username": ci.username, "password": ci.password });
+	connection.open_receiver("weather");
+}
+
+function append(json) {
+	console.log(json);
+	setTemperature(json.temperature);
+}
+
+function setTemperature(temp) {
+	var eleTemp = document.getElementById("weather-temp");
+
+	if ( temp != null ) {
+		eleTemp.innerText = temp.toFixed(2) + " °C";
+		if ( temp > 25 ) {
+			setImage("sunny");
+		} else if ( temp > 15 ) {
+			setImage("partlycloudy");
+		} else if ( temp > 5 ) {
+			setImage("rain");
+		} else if ( temp > 0 ) {
+			setImage("sleet");
+		} else {
+			setImage("snow");
+		}
+	} else {
+		eleTemp.innerText = "<unknown>";
+		setImage("unknown");
+	}
+}
+
+function setImage(name) {
+	var eleImg = document.getElementById("weather-img");
+	eleImg.src = "weather-underground-icons/dist/icons/black/svg/" + name + ".svg";
+}
+
+</script>
+
+<header>
+  <div class="navbar navbar-light bg-light">
+    <div class="container d-flex justify-content-between">
+      <a href="#" class="navbar-brand d-flex align-items-center">
+        <strong>Weather App</strong>
+      </a>
+    </div>
+  </div>
+</header>
+
+<main role="main" class="flex-shrink-0">
+
+  <div class="container">
+    <div class="row">
+
+<div class="card-deck">
+
+<div class="card mb-3 text-center" id="weather-card" style="width: 18rem;">
+  <img class="card-img-top" id="weather-img">
+  <div class="card-body">
+    <h3 class="card-title" id="weather-temp"></h5>
+  </div>
+</div>
+
+</div>
+
+    </div>
+  </div>
+</main>
+
+  <script src="jquery/dist/jquery.slim.min.js"></script>
+  <script src="bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+  <script>setTemperature(null);</script>
+
+</body>
+</html>
